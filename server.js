@@ -17,8 +17,7 @@ const tts = require('./tts');
 
 // ─── CONFIG ────────────────────────────────────────────────────────────────────
 const CONFIG = {
-  // Use environment variables for secrets in public repos:
-  // GROQ_API_KEY / GROQ_API_KEYS, NVIDIA_API_KEY / NVIDIA_API_KEYS
+  // No-.env mode supported via keys.local.json (gitignored).
   PORT: 3000,
   GROQ_API_KEYS: [],
   NVIDIA_API_KEYS: [],
@@ -50,15 +49,34 @@ function parseApiKeys(value = '') {
     .filter(Boolean);
 }
 
+function loadLocalKeyFile() {
+  const localPath = path.join(__dirname, 'keys.local.json');
+  try {
+    if (!fs.existsSync(localPath)) return { groq: [], nvidia: [] };
+    const raw = fs.readFileSync(localPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    const groq = Array.isArray(parsed?.groqApiKeys) ? parsed.groqApiKeys : [];
+    const nvidia = Array.isArray(parsed?.nvidiaApiKeys) ? parsed.nvidiaApiKeys : [];
+    return { groq, nvidia };
+  } catch (err) {
+    console.warn('[Config] Failed to parse keys.local.json:', err.message);
+    return { groq: [], nvidia: [] };
+  }
+}
+
+const LOCAL_KEYS = loadLocalKeyFile();
+
 const GROQ_KEYS = [
   ...parseApiKeys(process.env.GROQ_API_KEYS),
   ...parseApiKeys(process.env.GROQ_API_KEY),
+  ...(LOCAL_KEYS.groq || []),
   ...(CONFIG.GROQ_API_KEYS || []).filter((key) => key && key.trim())
 ];
 
 const NVIDIA_KEYS = [
   ...parseApiKeys(process.env.NVIDIA_API_KEYS),
   ...parseApiKeys(process.env.NVIDIA_API_KEY),
+  ...(LOCAL_KEYS.nvidia || []),
   ...(CONFIG.NVIDIA_API_KEYS || []).filter((key) => key && key.trim())
 ];
 const HAS_GROQ_KEY = GROQ_KEYS.length > 0;

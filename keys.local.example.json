@@ -1,0 +1,8 @@
+{
+  "groqApiKeys": [
+    "gsk_your_key_here"
+  ],
+  "nvidiaApiKeys": [
+    "nvapi-your_key_here"
+  ]
+}

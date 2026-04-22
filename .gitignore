@@ -9,6 +9,7 @@ npm-debug.log*
 # environment secrets
 .env
 .env.local
+keys.local.json
 
 # local models/binaries
 vosk-model-*/
