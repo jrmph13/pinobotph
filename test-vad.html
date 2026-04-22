@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VAD Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { font-size: 24px; font-weight: bold; margin: 20px 0; }
+        .controls { margin: 20px 0; }
+        button { padding: 10px 20px; font-size: 16px; margin-right: 10px; }
+        .log { background: #f0f0f0; padding: 10px; height: 200px; overflow-y: scroll; }
+    </style>
+</head>
+<body>
+    <h1>VAD Test Page</h1>
+    <div class="status" id="status">Status: IDLE</div>
+    <div class="controls">
+        <button onclick="startVAD()">Start VAD</button>
+        <button onclick="stopVAD()">Stop VAD</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    <div class="log" id="log"></div>
+
+    <script>
+        let vad = null;
+        const logEl = document.getElementById('log');
+        const statusEl = document.getElementById('status');
+
+        function log(msg) {
+            const time = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${time}] ${msg}<br>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStatus(state) {
+            statusEl.textContent = `Status: ${state.toUpperCase()}`;
+            statusEl.style.color = state === 'speaking' ? 'green' : 
+                                   state === 'paused' ? 'orange' : 
+                                   state === 'processing' ? 'blue' : 'black';
+        }
+
+        async function startVAD() {
+            try {
+                // Mock socket for testing
+                const mockSocket = {
+                    emit: (event, data) => {
+                        log(`Socket emit: ${event} - ${JSON.stringify(data).slice(0, 50)}...`);
+                    }
+                };
+
+                vad = new PinoVAD(mockSocket, {
+                    silenceMs: 2200,
+                    speechThresh: 0.012,
+                    pollMs: 48,
+                    onStateChange: (state) => {
+                        log(`VAD State: ${state}`);
+                        updateStatus(state);
+                    }
+                });
+
+                await vad.start();
+                log('VAD started successfully');
+            } catch (err) {
+                log(`Error: ${err.message}`);
+            }
+        }
+
+        function stopVAD() {
+            if (vad) {
+                vad.stop();
+                log('VAD stopped');
+                updateStatus('idle');
+            }
+        }
+
+        function clearLog() {
+            logEl.innerHTML = '';
+        }
+
+        // Load VAD script
+        const script = document.createElement('script');
+        script.src = 'public/vad.js';
+        script.onload = () => {
+            log('VAD script loaded');
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>

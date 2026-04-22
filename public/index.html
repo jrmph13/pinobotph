@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>PINO — Emotional AI Robot</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="auto-mode">
+
+  <!-- ═══ AMBIENT BACKGROUND ═══ -->
+  <div class="bg-nebula">
+    <div class="nebula-orb orb-1"></div>
+    <div class="nebula-orb orb-2"></div>
+    <div class="nebula-orb orb-3"></div>
+    <div class="grid-overlay"></div>
+  </div>
+
+  <!-- ═══ ROBOT FACE CONTAINER ═══ -->
+  <div class="robot-container">
+    <div class="top-actions">
+      <button id="themeToggle" class="theme-toggle" type="button">Switch Theme</button>
+    </div>
+
+    <!-- STATUS CHIP -->
+    <div class="status-chip" id="statusChip">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-label" id="statusLabel">IDLE</span>
+    </div>
+
+    <!-- FACE GLASS PANEL -->
+    <div class="face-panel glass" id="facePanel">
+      
+      <!-- SCAN LINE EFFECT -->
+      <div class="scanlines"></div>
+      <div class="think-fullscreen" id="thinkFullscreen" aria-hidden="true">
+        <div class="think-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <!-- NAME PLATE removed (face-only) -->
+
+      <!-- EYES -->
+      <div class="eyes-container">
+        <!-- LEFT EYE -->
+        <div class="eye-socket" id="eyeLeft">
+          <div class="eye-outer-ring"></div>
+          <div class="eye-iris" id="irisLeft">
+            <div class="eye-pupil"></div>
+            <div class="eye-highlight"></div>
+            <div class="eye-inner-glow"></div>
+          </div>
+          <div class="eye-lid-top" id="lidTopLeft"></div>
+          <div class="eye-lid-bottom" id="lidBotLeft"></div>
+        </div>
+
+        <!-- RIGHT EYE -->
+        <div class="eye-socket" id="eyeRight">
+          <div class="eye-outer-ring"></div>
+          <div class="eye-iris" id="irisRight">
+            <div class="eye-pupil"></div>
+            <div class="eye-highlight"></div>
+            <div class="eye-inner-glow"></div>
+          </div>
+          <div class="eye-lid-top" id="lidTopRight"></div>
+          <div class="eye-lid-bottom" id="lidBotRight"></div>
+        </div>
+      </div>
+
+      <!-- MOUTH / EXPRESSION BAR -->
+      <div class="mouth-area">
+        <div class="mouth-ascii" id="mouthAscii" aria-label="robot mouth">
+          <span class="mouth-center" id="mouthAsciiCenter">u</span>
+        </div>
+        <div class="mouth-wave" id="mouthWave" aria-hidden="true"></div>
+        <svg class="mouth-svg" id="mouthSvg" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+          <path id="mouthPath" d="M 10 20 Q 60 20 110 20" stroke="var(--eye-color)" stroke-width="3" fill="none" stroke-linecap="round"/>
+        </svg>
+      </div>
+
+      <!-- EMOTION LABEL -->
+      <div class="emotion-label" id="emotionLabel">NEUTRAL</div>
+
+      <!-- SIGNAL BARS -->
+      <div class="signal-bars" id="signalBars">
+        <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        <div class="bar"></div><div class="bar"></div>
+      </div>
+
+      <div class="action-fx action-fx-left" id="actionFxLeft" aria-hidden="true"></div>
+      <div class="action-fx action-fx-right" id="actionFxRight" aria-hidden="true"></div>
+      <div class="action-fx action-fx-center" id="actionFx" aria-hidden="true"></div>
+
+    </div><!-- end face-panel -->
+
+    <!-- GUIDE OVERLAY (hidden; click status chip or press G) -->
+    <div class="guide-overlay" id="guideOverlay" aria-hidden="true">
+      <div class="guide-card glass" role="dialog" aria-modal="true" aria-label="PINO guide">
+        <div class="guide-title">PINO GUIDE</div>
+        <div class="guide-body">
+          <div class="guide-row"><span class="k">Talk</span><span class="v">Speak, then pause. PINO submits after silence.</span></div>
+          <div class="guide-row"><span class="k">Wake audio</span><span class="v">Tap once if sound is blocked.</span></div>
+          <div class="guide-row"><span class="k">STT mode</span><span class="v">Uses Vosk when available; otherwise Browser STT / Groq fallback.</span></div>
+          <div class="guide-row"><span class="k">Creator</span><span class="v">Jeyms Rhonnielle Martin (BSIS student).</span></div>
+          <div class="guide-row"><span class="k">Dates</span><span class="v">Can discuss 2025–2026 topics; for breaking news, share details and PINO will help.</span></div>
+        </div>
+        <button class="guide-close" id="guideClose" type="button">Close</button>
+      </div>
+    </div>
+
+    <!-- SPEECH BUBBLE -->
+    <div class="speech-bubble glass" id="speechBubble">
+      <div class="bubble-meta">
+        <span class="bubble-icon" aria-hidden="true">🤖</span>
+        <span class="bubble-state" id="bubbleState">PINO READY</span>
+      </div>
+      <div class="bubble-text" id="bubbleText">Kumusta! Ako si PINO. Kausap mo ako!</div>
+      <div class="typing-indicator" id="typingIndicator">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- TRANSCRIPT DISPLAY -->
+    <div class="transcript-box glass" id="transcriptBox">
+      <div class="transcript-label">YOU SAID</div>
+      <div class="transcript-text" id="transcriptText">—</div>
+    </div>
+
+    <div class="about-box glass" id="aboutBox">
+      <div class="about-title">ABOUT PINO</div>
+      <p class="about-text">
+        PINO is a conversational AI robot assistant designed for natural talk in English, Taglish, and Filipino.
+        PINO can discuss public topics like Philippine news and personalities (for example, President Bongbong Marcos)
+        based on what the backend can access in real time.
+      </p>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls-panel glass" id="controlsPanel">
+      <!-- MIC BUTTON -->
+      <button class="btn-mic" id="btnMic" title="Push to Talk">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        <span class="btn-label" id="micLabel">HOLD TO TALK</span>
+        <div class="mic-pulse" id="micPulse"></div>
+      </button>
+
+      <!-- TEXT INPUT -->
+      <div class="text-input-row">
+        <input type="text" id="textInput" class="chat-input glass" placeholder="O mag-type dito..." autocomplete="off" />
+        <button class="btn-send" id="btnSend">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </div><!-- end robot-container -->
+
+  <!-- SOCKET.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="vad.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

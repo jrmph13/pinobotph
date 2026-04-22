@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# local runtime/cache
+.local-node/
+*.log
+npm-debug.log*
+
+# environment secrets
+.env
+.env.local
+
+# local models/binaries
+vosk-model-*/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
