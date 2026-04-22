@@ -1628,6 +1628,15 @@ body.is-thinking .status-chip {
   }
 }
 
+body.mobile-landscape .status-chip {
+  bottom: max(8px, env(safe-area-inset-bottom));
+  opacity: 0.9;
+}
+
+body.mobile-landscape .face-panel {
+  margin-top: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

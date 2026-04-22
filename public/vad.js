@@ -21,6 +21,7 @@ class PinoVAD {
     this.isActive = false;
     this.isPaused = false;
     this.lastUiState = '';
+    this.mediaMimeType = 'audio/webm';
 
     this.onStateChange = options.onStateChange || (() => {});
   }
@@ -48,12 +49,24 @@ class PinoVAD {
     this.analyser.fftSize = 512;
     source.connect(this.analyser);
 
-    const preferredType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : (MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '');
+    const mimeCandidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/ogg'
+    ];
+    const preferredType = mimeCandidates.find((m) => {
+      try {
+        return MediaRecorder.isTypeSupported(m);
+      } catch (_) {
+        return false;
+      }
+    }) || '';
     this.mediaRecorder = preferredType
       ? new MediaRecorder(this.stream, { mimeType: preferredType })
       : new MediaRecorder(this.stream);
+    this.mediaMimeType = this.mediaRecorder?.mimeType || preferredType || 'audio/webm';
 
     this.mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0 && this.captureActive) {
@@ -128,7 +141,7 @@ class PinoVAD {
     this.captureActive = false;
     this._setState('processing');
 
-    const blob = new Blob(this.audioChunks, { type: this.mediaRecorder?.mimeType || 'audio/webm' });
+    const blob = new Blob(this.audioChunks, { type: this.mediaMimeType || this.mediaRecorder?.mimeType || 'audio/webm' });
     this.audioChunks = [];
 
     if (blob.size < this.minBlobBytes) {
@@ -137,8 +150,24 @@ class PinoVAD {
     }
 
     blob.arrayBuffer().then((buf) => {
-      this.socket.emit('audio_chunk_final', buf);
+      // Prefer audio_blob with explicit mimeType for mobile compatibility.
+      let binary = '';
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i += 1) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const audioBase64 = btoa(binary);
+      this.socket.emit('audio_blob', {
+        audioBase64,
+        mimeType: this.mediaMimeType || blob.type || 'audio/webm',
+        reason: 'vad-silence'
+      });
+      this._setState('idle');
     }).catch(() => {
+      // Legacy fallback path.
+      try {
+        this.socket.emit('audio_chunk_final', blob);
+      } catch (_) {}
       this._setState('idle');
     });
   }

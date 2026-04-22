@@ -18,7 +18,7 @@ const tts = require('./tts');
 // ─── CONFIG ────────────────────────────────────────────────────────────────────
 const CONFIG = {
   // No-.env mode supported via keys.local.json (gitignored).
-  PORT: 3000,
+  PORT: Number(process.env.PORT) || 3000,
   GROQ_API_KEYS: [],
   NVIDIA_API_KEYS: [],
   SILENCE_BUFFER_MS: 1200,         // faster turn-taking after user pause

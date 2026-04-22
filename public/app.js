@@ -6,6 +6,7 @@
 const AUTO_MODE = true;
 const USE_BROWSER_TTS_ONLY = false;
 let preferBrowserSTT = false;
+const IS_MOBILE = /android|iphone|ipad|ipod/i.test(navigator.userAgent || '');
 
 // --- SOCKET CONNECTION ---
 const socket = io({
@@ -40,6 +41,12 @@ const btnSend = $('btnSend');
 const actionFx = $('actionFx');
 const actionFxLeft = $('actionFxLeft');
 const actionFxRight = $('actionFxRight');
+
+function updateViewportMode() {
+  const isLandscape = window.matchMedia('(orientation: landscape)').matches;
+  document.body.classList.toggle('mobile-device', IS_MOBILE);
+  document.body.classList.toggle('mobile-landscape', IS_MOBILE && isLandscape);
+}
 
 // --- STATE ---
 let shouldStreamAudio = true;
@@ -896,14 +903,27 @@ async function initVAD() {
     throw new Error('PinoVAD is not loaded. Ensure vad.js is included before app.js');
   }
 
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error('getUserMedia is unavailable in this browser');
+  }
+  if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    throw new Error('Mic requires secure context. Open via https or localhost.');
+  }
+
+  const silenceMs = IS_MOBILE ? 1700 : 2400;
+  const speechThresh = IS_MOBILE ? 0.009 : 0.012;
+  const pollMs = IS_MOBILE ? 36 : 48;
+  const minBlobBytes = IS_MOBILE ? 300 : 500;
+
   vad = new window.PinoVAD(socket, {
-    silenceMs: 3000,
-    speechThresh: 0.012,
-    pollMs: 48,
+    silenceMs,
+    speechThresh,
+    pollMs,
+    minBlobBytes,
     onStateChange: (state) => {
       if (state === 'speaking') {
         applyEmotionState('listening', 'listening');
-        if (micLabel) micLabel.textContent = 'LISTENING... (VOSK)';
+        if (micLabel) micLabel.textContent = 'LISTENING... (MIC)';
       } else if (state === 'paused') {
         if (micLabel) micLabel.textContent = 'WAITING...';
       } else if (state === 'processing') {
@@ -940,6 +960,9 @@ async function ensureInputMode() {
     return true;
   } catch (err) {
     console.error('[Input] VAD init error:', err);
+    if (micLabel && /secure context/i.test(String(err?.message || ''))) {
+      micLabel.textContent = 'OPEN VIA http://127.0.0.1:3000';
+    }
   }
 
   if (initBrowserSTT()) {
@@ -1134,6 +1157,7 @@ socket.on('gpio_executed', (cmd) => {
 
 // --- INIT ---
 window.addEventListener('load', () => {
+  updateViewportMode();
   initMouthWave();
   const themeToggle = $('themeToggle');
   if (themeToggle) {
@@ -1161,6 +1185,8 @@ window.addEventListener('load', () => {
   });
   attachManualControls();
 });
+window.addEventListener('orientationchange', updateViewportMode);
+window.addEventListener('resize', updateViewportMode);
 
 document.addEventListener('pointerdown', retryMicFromGesture);
 document.addEventListener('keydown', retryMicFromGesture);

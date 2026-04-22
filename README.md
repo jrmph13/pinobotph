@@ -37,12 +37,16 @@ Clone and run:
 ```bash
 git clone https://github.com/<your-username>/pinobotph.git
 cd pinobotph
-npm install
-node server.js
+bash run.sh
 ```
 
 Open in your phone browser:
 `http://127.0.0.1:3000`
+
+Notes:
+- `run.sh` auto-installs Termux packages and npm deps.
+- If `keys.local.json` is missing, it creates one from `keys.local.example.json`.
+- Insert your test keys in `keys.local.json`, then run `bash run.sh` again.
 
 ### Optional: keep server running in background
 ```bash
